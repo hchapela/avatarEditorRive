@@ -7,7 +7,6 @@ import ExportButton from "./ExportButton";
 import { AVATAR_CATEGORIES } from "./avatarConfig";
 
 function App() {
-  // Initialize state for ALL categories automatically
   const firstCategory = Object.keys(AVATAR_CATEGORIES)[0];
   
   const [selectedCategory, setSelectedCategory] = useState(firstCategory);
@@ -17,6 +16,24 @@ function App() {
 
   const canvasRef = useRef(null);
 
+  // Helper to pick random value from array
+  const getRandomValue = (array) => {
+    if (!array || array.length === 0) return null;
+    return array[Math.floor(Math.random() * array.length)];
+  };
+
+  // Randomize all categories
+  const randomizeAll = useCallback(() => {
+    const randomSelections = {};
+    Object.entries(availableOptions).forEach(([category, values]) => {
+      if (values && values.length > 0) {
+        randomSelections[category] = getRandomValue(values);
+      }
+    });
+    console.log("[APP] Randomized:", randomSelections);
+    setSelectedOptions(randomSelections);
+  }, [availableOptions]);
+
   const handleEnumValuesLoaded = useCallback((enumValues, titles) => {
     console.log("[APP] Loaded enum values:", enumValues);
     console.log("[APP] Loaded titles:", titles);
@@ -24,14 +41,15 @@ function App() {
     setAvailableOptions(enumValues);
     setCategoryTitles(titles || {});
 
-    // Set default selection (first value) for each category
-    const defaults = {};
+    // Set RANDOM selection for each category on initial load
+    const randomDefaults = {};
     Object.entries(enumValues).forEach(([category, values]) => {
       if (values && values.length > 0) {
-        defaults[category] = values[0];
+        randomDefaults[category] = getRandomValue(values);
       }
     });
-    setSelectedOptions(defaults);
+    console.log("[APP] Initial random selection:", randomDefaults);
+    setSelectedOptions(randomDefaults);
   }, []);
 
   const getOptionsForCategory = (category) => {
@@ -91,21 +109,6 @@ function App() {
             onCategoryChange={setSelectedCategory}
           />
 
-          <p>
-            Selected: <strong>{selectedCategory}</strong>
-          </p>
-
-          {/* Show current selections for all categories */}
-          {Object.keys(selectedOptions).length > 0 && (
-            <div style={{ fontSize: "0.9rem", marginBottom: "12px" }}>
-              {Object.entries(selectedOptions).map(([cat, val]) => (
-                <div key={cat}>
-                  {AVATAR_CATEGORIES[cat]?.label}: <strong>{val}</strong>
-                </div>
-              ))}
-            </div>
-          )}
-
           {availableOptions[selectedCategory] && availableOptions[selectedCategory].length > 0 ? (
             <OptionsSelector
               category={selectedCategory}
@@ -121,6 +124,27 @@ function App() {
               Loading options...
             </p>
           )}
+
+          {/* Randomize button */}
+          <div style={{ marginTop: "16px" }}>
+            <button
+              onClick={randomizeAll}
+              disabled={Object.keys(availableOptions).length === 0}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                borderRadius: "6px",
+                border: "none",
+                backgroundColor: "#9c27b0",
+                color: "#fff",
+                fontSize: "1rem",
+                cursor: Object.keys(availableOptions).length === 0 ? "not-allowed" : "pointer",
+                opacity: Object.keys(availableOptions).length === 0 ? 0.5 : 1,
+              }}
+            >
+              🎲 Randomize Avatar
+            </button>
+          </div>
 
           <ExportButton canvasRef={canvasRef} />
         </div>
