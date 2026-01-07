@@ -1,12 +1,10 @@
 // CategoryNavigation.jsx
 import React from "react";
+import { getCategoryList } from "./avatarConfig";
 
 function CategoryNavigation({ selectedCategory, onCategoryChange }) {
-  const categories = [
-    { id: "hair", label: "Hair" },
-    { id: "skin", label: "Skin" },
-    { id: "lips", label: "Lips" },
-  ];
+  // Automatically get all categories from config
+  const categories = getCategoryList();
 
   return (
     <div

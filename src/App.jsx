@@ -4,25 +4,27 @@ import AvatarPreview from "./AvatarPreview";
 import CategoryNavigation from "./CategoryNavigation";
 import OptionsSelector from "./OptionsSelector";
 import ExportButton from "./ExportButton";
+import { AVATAR_CATEGORIES } from "./avatarConfig";
 
 function App() {
-  const [selectedCategory, setSelectedCategory] = useState("lips");
-  const [availableOptions, setAvailableOptions] = useState({
-    lips: [],
-  });
-  const [selectedOptions, setSelectedOptions] = useState({
-    lips: null,
-  });
+  // Initialize state for ALL categories automatically
+  const firstCategory = Object.keys(AVATAR_CATEGORIES)[0];
+  
+  const [selectedCategory, setSelectedCategory] = useState(firstCategory);
+  const [availableOptions, setAvailableOptions] = useState({});
+  const [categoryTitles, setCategoryTitles] = useState({});
+  const [selectedOptions, setSelectedOptions] = useState({});
 
   const canvasRef = useRef(null);
 
-  // Wrap in useCallback to prevent infinite loop
-  const handleEnumValuesLoaded = useCallback((enumValues) => {
-    console.log("[APP] Enum values loaded from Rive:", enumValues);
+  const handleEnumValuesLoaded = useCallback((enumValues, titles) => {
+    console.log("[APP] Loaded enum values:", enumValues);
+    console.log("[APP] Loaded titles:", titles);
     
     setAvailableOptions(enumValues);
+    setCategoryTitles(titles || {});
 
-    // Set default selections (first value of each enum)
+    // Set default selection (first value) for each category
     const defaults = {};
     Object.entries(enumValues).forEach(([category, values]) => {
       if (values && values.length > 0) {
@@ -30,14 +32,14 @@ function App() {
       }
     });
     setSelectedOptions(defaults);
-  }, []); // Empty deps = only created once
+  }, []);
 
   const getOptionsForCategory = (category) => {
     return availableOptions[category] || [];
   };
 
   const handleOptionChange = (category, option) => {
-    console.log("[APP] Changing option", category, "->", option);
+    console.log("[APP] Changing", category, "to", option);
     setSelectedOptions((prev) => ({
       ...prev,
       [category]: option,
@@ -90,20 +92,24 @@ function App() {
           />
 
           <p>
-            Selected category: <strong>{selectedCategory}</strong>
+            Selected: <strong>{selectedCategory}</strong>
           </p>
 
-          {selectedOptions.lips && (
-            <p>
-              Current selection:
-              <br />
-              Lips: <strong>{selectedOptions.lips}</strong>
-            </p>
+          {/* Show current selections for all categories */}
+          {Object.keys(selectedOptions).length > 0 && (
+            <div style={{ fontSize: "0.9rem", marginBottom: "12px" }}>
+              {Object.entries(selectedOptions).map(([cat, val]) => (
+                <div key={cat}>
+                  {AVATAR_CATEGORIES[cat]?.label}: <strong>{val}</strong>
+                </div>
+              ))}
+            </div>
           )}
 
           {availableOptions[selectedCategory] && availableOptions[selectedCategory].length > 0 ? (
             <OptionsSelector
               category={selectedCategory}
+              title={categoryTitles[selectedCategory] || AVATAR_CATEGORIES[selectedCategory]?.label}
               options={getOptionsForCategory(selectedCategory)}
               selectedOption={selectedOptions[selectedCategory]}
               onOptionSelect={(opt) =>
@@ -112,7 +118,7 @@ function App() {
             />
           ) : (
             <p style={{ color: "#999", fontSize: "0.9rem" }}>
-              Loading options from Rive...
+              Loading options...
             </p>
           )}
 

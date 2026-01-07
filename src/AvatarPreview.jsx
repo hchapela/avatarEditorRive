@@ -1,4 +1,6 @@
 // AvatarPreview.jsx
+// Now automatically loads ALL categories from config
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   useRive,
@@ -9,10 +11,11 @@ import {
   useViewModelInstance,
 } from "@rive-app/react-webgl2";
 import avatarRive from "./assets/avatar.riv";
+import { AVATAR_CATEGORIES } from "./avatarConfig";
 
 function AvatarPreview({ canvasRef, selectedOptions, onEnumValuesLoaded }) {
   const containerRef = useRef(null);
-  const [enumsLoaded, setEnumsLoaded] = useState(false); // Track if already loaded
+  const [enumsLoaded, setEnumsLoaded] = useState(false);
 
   const { rive, RiveComponent } = useRive({
     src: avatarRive,
@@ -27,72 +30,78 @@ function AvatarPreview({ canvasRef, selectedOptions, onEnumValuesLoaded }) {
   const viewModel = useViewModel(rive, { name: "AvatarCustomizer" });
   const viewModelInstance = useViewModelInstance(viewModel, { rive });
 
-  // Extract enum values ONCE when instance is ready
+  // Load ALL enums and titles from config automatically
   useEffect(() => {
     if (!viewModelInstance || !viewModelInstance._runtimeInstance) return;
-    if (enumsLoaded) return; // Already loaded, skip
+    if (enumsLoaded) return;
     if (!onEnumValuesLoaded) return;
 
     const runtimeInst = viewModelInstance._runtimeInstance;
 
     try {
-      const enumProperties = {
-        lips: "Lips Color",
-        // Add more:
-        // hair: "Hair Style",
-      };
-
       const enumValues = {};
+      const categoryTitles = {};
 
-      Object.entries(enumProperties).forEach(([category, enumName]) => {
-        try {
-          const enumProp = runtimeInst.enum(enumName);
-          if (enumProp && enumProp.values) {
-            enumValues[category] = enumProp.values;
-            console.log(`[ENUM] Loaded ${category}:`, enumProp.values);
+      // Loop through ALL categories in config
+      Object.values(AVATAR_CATEGORIES).forEach((category) => {
+        // Load enum values
+        if (category.enumProperty) {
+          try {
+            const enumProp = runtimeInst.enum(category.enumProperty);
+            if (enumProp && enumProp.values) {
+              enumValues[category.id] = enumProp.values;
+              console.log(`[ENUM] ${category.id}:`, enumProp.values);
+            }
+          } catch (e) {
+            console.warn(`[ENUM] Could not load ${category.enumProperty}:`, e);
           }
-        } catch (e) {
-          console.warn(`[ENUM] Could not load ${enumName}:`, e);
+        }
+
+        // Load title string
+        if (category.titleProperty) {
+          try {
+            const titleProp = runtimeInst.string(category.titleProperty);
+            if (titleProp && titleProp.value) {
+              categoryTitles[category.id] = titleProp.value;
+              console.log(`[TITLE] ${category.id}:`, titleProp.value);
+            }
+          } catch (e) {
+            console.warn(`[TITLE] Could not load ${category.titleProperty}:`, e);
+          }
         }
       });
 
-      onEnumValuesLoaded(enumValues);
-      setEnumsLoaded(true); // Mark as loaded
+      onEnumValuesLoaded(enumValues, categoryTitles);
+      setEnumsLoaded(true);
     } catch (e) {
-      console.error("[ENUM] Error loading enum values:", e);
+      console.error("[ENUM] Error loading values:", e);
     }
   }, [viewModelInstance, onEnumValuesLoaded, enumsLoaded]);
 
-  // Sync selected options to ViewModel
+  // Sync ALL categories automatically
   useEffect(() => {
     if (!viewModelInstance || !viewModelInstance._runtimeInstance) return;
     if (!selectedOptions) return;
 
     const runtimeInst = viewModelInstance._runtimeInstance;
 
-    const propertyMappings = {
-      lips: { type: "enum", propertyName: "Lips Color" },
-    };
-
-    Object.entries(propertyMappings).forEach(([category, config]) => {
-      const selectedValue = selectedOptions[category];
-      if (!selectedValue) return;
+    // Loop through ALL categories and sync their selected values
+    Object.values(AVATAR_CATEGORIES).forEach((category) => {
+      const selectedValue = selectedOptions[category.id];
+      if (!selectedValue || !category.enumProperty) return;
 
       try {
-        if (config.type === "enum") {
-          const property = runtimeInst.enum(config.propertyName);
-          if (property && property.value !== selectedValue) {
-            console.log(`[SYNC] ${category}: ${selectedValue}`);
-            property.value = selectedValue;
-          }
+        const property = runtimeInst.enum(category.enumProperty);
+        if (property && property.value !== selectedValue) {
+          console.log(`[SYNC] ${category.id}: ${selectedValue}`);
+          property.value = selectedValue;
         }
       } catch (e) {
-        console.error(`[SYNC] Error setting ${config.propertyName}:`, e);
+        console.error(`[SYNC] Error setting ${category.enumProperty}:`, e);
       }
     });
   }, [selectedOptions, viewModelInstance]);
 
-  // Canvas capture
   useEffect(() => {
     if (!containerRef.current) return;
     const canvas = containerRef.current.querySelector("canvas");
