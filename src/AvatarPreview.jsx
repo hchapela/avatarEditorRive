@@ -1,32 +1,109 @@
-// AvatarPreview.js
-// Minimal version: just load and render the Rive file.
-// We'll add customization later.
-
-import React from "react";
-import { useRive, Layout, Fit, Alignment } from "@rive-app/react-canvas";
-
-// Adjust the path to your actual file name if needed
+// AvatarPreview.jsx
+import React, { useEffect, useRef, useState } from "react";
+import {
+  useRive,
+  Layout,
+  Fit,
+  Alignment,
+  useViewModel,
+  useViewModelInstance,
+} from "@rive-app/react-webgl2";
 import avatarRive from "./assets/avatar.riv";
 
-function AvatarPreview() {
-  // Set up Rive with the given .riv file.
-  // For now we don't care about state machines, we just want to SEE something.
-  const { RiveComponent, rive } = useRive({
+function AvatarPreview({ canvasRef, selectedOptions, onEnumValuesLoaded }) {
+  const containerRef = useRef(null);
+  const [enumsLoaded, setEnumsLoaded] = useState(false); // Track if already loaded
+
+  const { rive, RiveComponent } = useRive({
     src: avatarRive,
     autoplay: true,
+    stateMachines: "State Machine 1",
     layout: new Layout({
       fit: Fit.Contain,
       alignment: Alignment.Center,
     }),
   });
 
-  // For debugging: log when rive is ready
-  if (rive) {
-    console.log("Rive instance is ready");
-  }
+  const viewModel = useViewModel(rive, { name: "AvatarCustomizer" });
+  const viewModelInstance = useViewModelInstance(viewModel, { rive });
+
+  // Extract enum values ONCE when instance is ready
+  useEffect(() => {
+    if (!viewModelInstance || !viewModelInstance._runtimeInstance) return;
+    if (enumsLoaded) return; // Already loaded, skip
+    if (!onEnumValuesLoaded) return;
+
+    const runtimeInst = viewModelInstance._runtimeInstance;
+
+    try {
+      const enumProperties = {
+        lips: "Lips Color",
+        // Add more:
+        // hair: "Hair Style",
+      };
+
+      const enumValues = {};
+
+      Object.entries(enumProperties).forEach(([category, enumName]) => {
+        try {
+          const enumProp = runtimeInst.enum(enumName);
+          if (enumProp && enumProp.values) {
+            enumValues[category] = enumProp.values;
+            console.log(`[ENUM] Loaded ${category}:`, enumProp.values);
+          }
+        } catch (e) {
+          console.warn(`[ENUM] Could not load ${enumName}:`, e);
+        }
+      });
+
+      onEnumValuesLoaded(enumValues);
+      setEnumsLoaded(true); // Mark as loaded
+    } catch (e) {
+      console.error("[ENUM] Error loading enum values:", e);
+    }
+  }, [viewModelInstance, onEnumValuesLoaded, enumsLoaded]);
+
+  // Sync selected options to ViewModel
+  useEffect(() => {
+    if (!viewModelInstance || !viewModelInstance._runtimeInstance) return;
+    if (!selectedOptions) return;
+
+    const runtimeInst = viewModelInstance._runtimeInstance;
+
+    const propertyMappings = {
+      lips: { type: "enum", propertyName: "Lips Color" },
+    };
+
+    Object.entries(propertyMappings).forEach(([category, config]) => {
+      const selectedValue = selectedOptions[category];
+      if (!selectedValue) return;
+
+      try {
+        if (config.type === "enum") {
+          const property = runtimeInst.enum(config.propertyName);
+          if (property && property.value !== selectedValue) {
+            console.log(`[SYNC] ${category}: ${selectedValue}`);
+            property.value = selectedValue;
+          }
+        }
+      } catch (e) {
+        console.error(`[SYNC] Error setting ${config.propertyName}:`, e);
+      }
+    });
+  }, [selectedOptions, viewModelInstance]);
+
+  // Canvas capture
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const canvas = containerRef.current.querySelector("canvas");
+    if (canvas && canvasRef) {
+      canvasRef.current = canvas;
+    }
+  });
 
   return (
     <div
+      ref={containerRef}
       style={{
         width: "400px",
         height: "400px",
@@ -40,13 +117,7 @@ function AvatarPreview() {
         justifyContent: "center",
       }}
     >
-      {/* Renders the actual canvas with your animation */}
-      <RiveComponent
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-      />
+      <RiveComponent style={{ width: "100%", height: "100%" }} />
     </div>
   );
 }
