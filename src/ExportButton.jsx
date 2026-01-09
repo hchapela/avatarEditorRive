@@ -56,16 +56,16 @@ function ExportButton({ canvasRef }) {
   };
 
   return (
-    <div style={{ marginTop: "16px" }}>
+    <div style={{ marginTop: "0px" }}>
       <button
         onClick={handleExport}
         style={{
           width: "100%",
-          padding: "10px 14px",
-          borderRadius: "6px",
+          padding: "12px 16px",
+          borderRadius: "12px",
           border: "none",
-          backgroundColor: "#ff9800",
-          color: "#fff",
+          backgroundColor: "#A238FF",
+          color: "#FDFCFE",
           fontSize: "1rem",
           cursor: "pointer",
         }}

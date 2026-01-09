@@ -5,10 +5,11 @@ import CategoryNavigation from "./CategoryNavigation";
 import OptionsSelector from "./OptionsSelector";
 import ExportButton from "./ExportButton";
 import { AVATAR_CATEGORIES } from "./avatarConfig";
+import "./index.css"; // Make sure this line exists
 
 function App() {
   const firstCategory = Object.keys(AVATAR_CATEGORIES)[0];
-  
+
   const [selectedCategory, setSelectedCategory] = useState(firstCategory);
   const [availableOptions, setAvailableOptions] = useState({});
   const [categoryTitles, setCategoryTitles] = useState({});
@@ -16,13 +17,11 @@ function App() {
 
   const canvasRef = useRef(null);
 
-  // Helper to pick random value from array
   const getRandomValue = (array) => {
     if (!array || array.length === 0) return null;
     return array[Math.floor(Math.random() * array.length)];
   };
 
-  // Randomize all categories
   const randomizeAll = useCallback(() => {
     const randomSelections = {};
     Object.entries(availableOptions).forEach(([category, values]) => {
@@ -37,11 +36,10 @@ function App() {
   const handleEnumValuesLoaded = useCallback((enumValues, titles) => {
     console.log("[APP] Loaded enum values:", enumValues);
     console.log("[APP] Loaded titles:", titles);
-    
+
     setAvailableOptions(enumValues);
     setCategoryTitles(titles || {});
 
-    // Set RANDOM selection for each category on initial load
     const randomDefaults = {};
     Object.entries(enumValues).forEach(([category, values]) => {
       if (values && values.length > 0) {
@@ -67,86 +65,132 @@ function App() {
   return (
     <div
       style={{
-        fontFamily:
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        padding: "20px",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        height: "100vh",
+        width: "100vw", // ADD THIS
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#FDFCFE",
+        overflow: "hidden",
+        margin: 0, // ADD THIS
+        padding: 0, // ADD THIS
       }}
     >
-      <h1 style={{ textAlign: "center" }}>Avatar Customizer</h1>
+      <h2 style={{ margin: "24px 24px", flexShrink: 0 }}>Avatar Customizer</h2>
 
+      {/* 3-column layout */}
       <div
         style={{
           display: "flex",
-          gap: "24px",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          flexWrap: "wrap",
-          marginTop: "24px",
+          flexDirection: "row",
+          flex: 1,
+          minHeight: 0,
+          width: "100%", // ADD THIS
+          borderTop: "1px solid #e0e0e0",
         }}
       >
-        <div style={{ flex: 1, minWidth: "320px" }}>
+        {/* Column 1: Category Controls (left) */}
+        <div
+          style={{
+            display: "flex",
+            width: "240px",
+            flexDirection: "column",
+            padding: "24px",
+            backgroundColor: "#FDFCFE",
+            borderRight: "1px solid #e0e0e0",
+            flexShrink: 0,
+            overflowY: "auto",
+          }}
+        >
+          <h3 style={{ marginTop: 0, marginBottom: "16px", fontSize: "1.2rem" }}>Categories</h3>
+          <CategoryNavigation
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+          />
+        </div>
+
+        {/* Column 2: Options Selector (middle) */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            padding: "24px",
+            width: "400px",
+            flexShrink: 0,
+            backgroundColor: "#FDFCFE",
+            borderRight: "1px solid #e0e0e0",
+            overflowY: "auto",
+          }}
+        >
+          {availableOptions[selectedCategory] && availableOptions[selectedCategory].length > 0 ? (
+            <OptionsSelector
+              options={getOptionsForCategory(selectedCategory)}
+              selectedOption={selectedOptions[selectedCategory]}
+              onOptionSelect={(opt) => handleOptionChange(selectedCategory, opt)}
+            />
+          ) : (
+            <p style={{ color: "#999", fontSize: "0.9rem" }}>Loading options...</p>
+          )}
+        </div>
+
+        {/* Column 3: Preview + Actions */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "40px",
+            backgroundColor: "#F5F2F8", // Changed from #fafafa - try a blue to see it clearly
+            gap: "20px",
+            overflow: "auto",
+          }}
+        >
           <AvatarPreview
             canvasRef={canvasRef}
             selectedOptions={selectedOptions}
             onEnumValuesLoaded={handleEnumValuesLoaded}
           />
-        </div>
 
-        <div
-          style={{
-            flex: 1,
-            minWidth: "260px",
-            borderRadius: "8px",
-            padding: "16px",
-            backgroundColor: "#ffffff",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-          }}
-        >
-          <h2>Controls</h2>
-
-          <CategoryNavigation
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-          />
-
-          {availableOptions[selectedCategory] && availableOptions[selectedCategory].length > 0 ? (
-            <OptionsSelector
-              category={selectedCategory}
-              title={categoryTitles[selectedCategory] || AVATAR_CATEGORIES[selectedCategory]?.label}
-              options={getOptionsForCategory(selectedCategory)}
-              selectedOption={selectedOptions[selectedCategory]}
-              onOptionSelect={(opt) =>
-                handleOptionChange(selectedCategory, opt)
-              }
-            />
-          ) : (
-            <p style={{ color: "#999", fontSize: "0.9rem" }}>
-              Loading options...
-            </p>
-          )}
-
-          {/* Randomize button */}
-          <div style={{ marginTop: "16px" }}>
-            <button
-              onClick={randomizeAll}
-              disabled={Object.keys(availableOptions).length === 0}
+          {/* Action buttons */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              maxWidth: "400px",
+              width: "100%",
+            }}
+          >
+            <div
               style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "6px",
-                border: "none",
-                backgroundColor: "#9c27b0",
-                color: "#fff",
-                fontSize: "1rem",
-                cursor: Object.keys(availableOptions).length === 0 ? "not-allowed" : "pointer",
-                opacity: Object.keys(availableOptions).length === 0 ? 0.5 : 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
               }}
             >
-              🎲 Randomize Avatar
-            </button>
+              <ExportButton canvasRef={canvasRef} />
+              <button
+                onClick={randomizeAll}
+                disabled={Object.keys(availableOptions).length === 0}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "none",
+                  backgroundColor: "#E1DDE4",
+                  color: "#6F6D71",
+                  fontSize: "1rem",
+                  cursor: Object.keys(availableOptions).length === 0 ? "not-allowed" : "pointer",
+                  opacity: Object.keys(availableOptions).length === 0 ? 0.5 : 1,
+                  fontWeight: "500",
+                }}
+              >
+                🎲 Randomize Avatar
+              </button>
+            </div>
           </div>
-
-          <ExportButton canvasRef={canvasRef} />
         </div>
       </div>
     </div>

@@ -21,8 +21,6 @@ function OptionsSelector({ category, options, selectedOption, onOptionSelect }) 
 
   return (
     <div style={{ marginTop: "16px" }}>
-      <h3 style={{ marginBottom: "8px" }}>{title}</h3>
-
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {options.map((opt) => (
           <button
@@ -31,12 +29,8 @@ function OptionsSelector({ category, options, selectedOption, onOptionSelect }) 
             style={{
               padding: "6px 10px",
               borderRadius: "6px",
-              border:
-                opt === selectedOption
-                  ? "1px solid #28a745"
-                  : "1px solid #ccc",
-              backgroundColor:
-                opt === selectedOption ? "#28a745" : "#fafafa",
+              border: opt === selectedOption ? "1px solid #28a745" : "1px solid #ccc",
+              backgroundColor: opt === selectedOption ? "#28a745" : "#fafafa",
               color: opt === selectedOption ? "#fff" : "#333",
               cursor: "pointer",
               fontSize: "0.9rem",

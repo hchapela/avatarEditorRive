@@ -3,16 +3,14 @@ import React from "react";
 import { getCategoryList } from "./avatarConfig";
 
 function CategoryNavigation({ selectedCategory, onCategoryChange }) {
-  // Automatically get all categories from config
   const categories = getCategoryList();
 
   return (
     <div
       style={{
         display: "flex",
+        flexDirection: "column", // Changed to column for vertical stack
         gap: "8px",
-        flexWrap: "wrap",
-        marginBottom: "16px",
       }}
     >
       {categories.map((cat) => (
@@ -20,19 +18,19 @@ function CategoryNavigation({ selectedCategory, onCategoryChange }) {
           key={cat.id}
           onClick={() => onCategoryChange(cat.id)}
           style={{
-            flex: 1,
-            minWidth: "70px",
-            padding: "6px 10px",
+            display: "flex",
+            justifyContent: "center",
+            padding: "10px 16px",
             borderRadius: "6px",
-            border:
-              selectedCategory === cat.id
-                ? "1px solid #007bff"
-                : "1px solid #ccc",
-            backgroundColor:
-              selectedCategory === cat.id ? "#007bff" : "#f8f8f8",
+            border: selectedCategory === cat.id ? "2px solid #007bff" : "1px solid #ccc",
+            backgroundColor: selectedCategory === cat.id ? "#007bff" : "#ffffff",
             color: selectedCategory === cat.id ? "#fff" : "#333",
             cursor: "pointer",
-            fontSize: "0.9rem",
+            fontSize: "0.95rem",
+            fontWeight: selectedCategory === cat.id ? "700" : "700",
+            textTransform: "capitalize",
+            textAlign: "left",
+            whiteSpace: "nowrap",
           }}
         >
           {cat.label}
